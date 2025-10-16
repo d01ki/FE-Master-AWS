@@ -31,7 +31,7 @@ if not app.config['SECRET_KEY']:
     else:
         raise ValueError("❌ セキュリティエラー: SECRET_KEY環境変数が設定されていません。本番環境では必須です。")
 
-# セッション設定（セッション時間を延長）
+# セッション設定（セッション時間を延長してRender無料枠でも使いやすく）
 app.config.update(
     SESSION_COOKIE_SECURE=not Config.DEBUG,  # 本番環境ではTrue（HTTPS必須）
     SESSION_COOKIE_HTTPONLY=True,
@@ -45,7 +45,7 @@ if not Config.ADMIN_PASSWORD:
         # 開発環境のみデフォルト使用を許可
         Config.ADMIN_PASSWORD = 'dev-admin-password-CHANGE-ME'
         print("⚠️  警告: 開発用のデフォルト管理者パスワードを使用しています。")
-    else:
+else:
         raise ValueError("❌ セキュリティエラー: 本番環境ではADMIN_PASSWORD環境変数の設定が必須です。")
 
 # フォルダ作成
@@ -69,7 +69,8 @@ app.config['ADMIN_PASSWORD'] = Config.ADMIN_PASSWORD
 # 認証システムの初期化
 init_auth_routes(app, db_manager)
 
-# Auth endpoint aliases for compatibility
+# ===== Auth endpoint aliases for compatibility with middleware expecting 'auth.*' endpoints =====
+# Some middlewares may call url_for('auth.login') style endpoints; these redirect to actual views.
 @app.route('/auth/login', endpoint='auth.login')
 def _auth_login_alias():
     return redirect(url_for('login'))

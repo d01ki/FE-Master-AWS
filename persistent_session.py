@@ -44,6 +44,7 @@ class DatabaseSessionManager:
         
         try:
             self.db.execute_query(query)
+            # インデックス作成
             self.db.execute_query("CREATE INDEX IF NOT EXISTS idx_session_token ON user_sessions(session_token)")
             self.db.execute_query("CREATE INDEX IF NOT EXISTS idx_session_expires ON user_sessions(expires_at)")
         except Exception as e:
@@ -62,6 +63,7 @@ class DatabaseSessionManager:
         session_token = self.generate_session_token(user_id)
         expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
         
+        # 既存のセッションをクリーンアップ
         self.cleanup_user_sessions(user_id)
         
         if self.db.db_type == 'postgresql':
@@ -106,6 +108,7 @@ class DatabaseSessionManager:
             result = self.db.execute_query(query, (session_token,))
             if result:
                 session_data = result[0]
+                # アクセス時間を更新
                 self.update_last_accessed(session_token)
                 return {
                     'user_id': session_data['user_id'],
@@ -203,19 +206,23 @@ def persistent_login_required(f):
         
         session_manager = getattr(current_app, 'session_manager', None)
         if not session_manager:
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         
+        # ブラウザからセッショントークンを取得
         session_token = session.get('session_token')
         session_data = session_manager.get_session_data(session_token)
         
         if not session_data:
+            # セッションが無効な場合はログインページへ
             session.clear()
             flash('セッションが期限切れです。再度ログインしてください。', 'warning')
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         
+        # セッションデータをFlaskセッションに復元
         for key, value in session_data['user_data'].items():
             session[key] = value
         
+        # アクティブなユーザーのセッションを延長
         session_manager.extend_session(session_token)
         
         return f(*args, **kwargs)

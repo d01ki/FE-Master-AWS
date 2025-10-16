@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Column: Welcome Card and Stats -->
+    <div class="w-full md:w-2/3">
+        <!-- Welcome Card -->
+        <div class="card mb-8 animate-fadeIn">
+            <h1 class="text-2xl font-bold mb-4">
+                {% if session.get('user_id') %}
+                    こんにちは、{{ session.get('username') }}さん
+                {% else %}
+                    基本情報技術者試験の学習を始めましょう
+                {% endif %}
+            </h1>
+            <p class="text-gray-600 mb-6">
+                {% if session.get('user_id') %}
+                    今日も頑張りましょう！
+                {% else %}
+                    会員登録して学習を始めると、進捗管理や学習履歴の確認ができます。
+                {% endif %}
+            </p>
+            {% if not session.get('user_id') %}
+                <div class="flex gap-4">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        <span>新規登録</span>
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-secondary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>ログイン</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Quick Start and Categories -->
+    <div class="w-full md:w-1/3">
+        <!-- Quick Start -->
+        <div class="card mb-8">
+            <h2 class="text-xl font-bold mb-4">クイックスタート</h2>
+            <div class="space-y-4">
+                <a href="{{ url_for('practice.random_practice') }}" class="btn btn-primary w-full justify-center">
+                    <i class="fas fa-random"></i>
+                    <span>ランダム問題に挑戦</span>
+                </a>
+                <a href="{{ url_for('practice.genre_practice') }}" class="btn btn-secondary w-full justify-center">
+                    <i class="fas fa-tags"></i>
+                    <span>ジャンル別演習</span>
+                </a>
+                <a href="{{ url_for('exam.mock_exam') }}" class="btn btn-secondary w-full justify-center">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>模擬試験</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

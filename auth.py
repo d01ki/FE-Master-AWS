@@ -20,15 +20,18 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         from flask import current_app
         
+        # 永続セッションから確認
         session_manager = getattr(current_app, 'session_manager', None)
         if session_manager:
             session_token = session.get('session_token')
             session_data = session_manager.get_session_data(session_token)
             if session_data and session_data['user_data'].get('is_admin'):
+                # セッションデータを復元
                 for key, value in session_data['user_data'].items():
                     session[key] = value
                 return f(*args, **kwargs)
         
+        # 従来のセッション確認
         if 'user_id' not in session:
             flash('ログインが必要です。', 'warning')
             return redirect(url_for('admin_login'))
@@ -39,11 +42,13 @@ def admin_required(f):
     return decorated_function
 
 def init_auth_routes(app, db_manager):
+    # 永続セッションマネージャーの初期化
     session_manager = DatabaseSessionManager(db_manager)
     app.session_manager = session_manager
     
     @app.route('/register', methods=['GET', 'POST'])
     def register():
+        # 永続セッションチェック
         session_token = session.get('session_token')
         if session_token:
             session_data = session_manager.get_session_data(session_token)
@@ -58,10 +63,12 @@ def init_auth_routes(app, db_manager):
             password = request.form['password']
             confirm_password = request.form.get('confirm_password', '')
             
+            # Validation
             if not username or not password:
                 flash('ユーザー名とパスワードを入力してください。', 'error')
                 return redirect(url_for('register'))
             
+            # Security: Block "admin" username registration (case-insensitive)
             if username.lower() == 'admin':
                 flash('このユーザー名は使用できません。別のユーザー名を選択してください。', 'error')
                 return redirect(url_for('register'))
@@ -78,18 +85,22 @@ def init_auth_routes(app, db_manager):
                 flash('パスワードが一致しません。', 'error')
                 return redirect(url_for('register'))
 
+            # Check duplicate username (case-insensitive)
             try:
+                # Check for exact match first
                 existing_user = db_manager.execute_query(
                     'SELECT id FROM users WHERE username = %s' if db_manager.db_type == 'postgresql' else 'SELECT id FROM users WHERE username = ?',
                     (username,)
                 )
                 
+                # Also check case-insensitive to prevent similar usernames
                 if db_manager.db_type == 'postgresql':
                     existing_user_case_insensitive = db_manager.execute_query(
                         'SELECT id FROM users WHERE LOWER(username) = LOWER(%s)',
                         (username,)
                     )
                 else:
+                    # SQLite is case-insensitive by default for LIKE, but we'll be explicit
                     existing_user_case_insensitive = db_manager.execute_query(
                         'SELECT id FROM users WHERE LOWER(username) = LOWER(?)',
                         (username,)
@@ -99,6 +110,7 @@ def init_auth_routes(app, db_manager):
                     flash('このユーザー名は既に使用されています。別のユーザー名を選択してください。', 'error')
                     return redirect(url_for('register'))
 
+                # Create user
                 password_hash = generate_password_hash(password)
                 db_manager.execute_query(
                     'INSERT INTO users (username, password_hash, is_admin) VALUES (%s, %s, %s)' if db_manager.db_type == 'postgresql' else 'INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)',
@@ -116,6 +128,7 @@ def init_auth_routes(app, db_manager):
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
+        # 永続セッションチェック
         session_token = session.get('session_token')
         if session_token:
             session_data = session_manager.get_session_data(session_token)
@@ -128,12 +141,13 @@ def init_auth_routes(app, db_manager):
         if request.method == 'POST':
             username = request.form['username'].strip()
             password = request.form['password']
-            remember_me = request.form.get('remember_me') == 'on'
+            remember_me = request.form.get('remember_me') == 'on'  # ログイン情報を記憶するか
             
             if not username or not password:
                 flash('ユーザー名とパスワードを入力してください。', 'error')
                 return redirect(url_for('login'))
             
+            # Admin login via environment variable (if set)
             if username.lower() == 'admin' and Config.ADMIN_PASSWORD:
                 if password == Config.ADMIN_PASSWORD:
                     session.clear()
@@ -143,9 +157,11 @@ def init_auth_routes(app, db_manager):
                         'is_admin': True
                     }
                     
-                    if remember_me or True:
+                    # 永続セッション作成（管理者も記憶する）
+                    if remember_me or True:  # 管理者は常に永続セッション
                         create_persistent_session(session_manager, 'admin', user_data)
                     
+                    # 通常のセッションも設定
                     for key, value in user_data.items():
                         session[key] = value
                     
@@ -156,6 +172,7 @@ def init_auth_routes(app, db_manager):
                     return redirect(url_for('login'))
             
             try:
+                # Case-sensitive username lookup for regular users
                 user = db_manager.execute_query(
                     'SELECT * FROM users WHERE username = %s' if db_manager.db_type == 'postgresql' else 'SELECT * FROM users WHERE username = ?',
                     (username,)
@@ -169,9 +186,11 @@ def init_auth_routes(app, db_manager):
                         'is_admin': user[0]['is_admin']
                     }
                     
-                    if remember_me or True:
+                    # 永続セッション作成（記憶するにチェックがある場合、または常に有効化）
+                    if remember_me or True:  # 常に永続セッションを使用（Render対応）
                         create_persistent_session(session_manager, user[0]['id'], user_data)
                     
+                    # 通常のセッションも設定
                     for key, value in user_data.items():
                         session[key] = value
                     
@@ -187,6 +206,7 @@ def init_auth_routes(app, db_manager):
 
     @app.route('/admin/login', methods=['GET', 'POST'])
     def admin_login():
+        # 永続セッションチェック
         session_token = session.get('session_token')
         if session_token:
             session_data = session_manager.get_session_data(session_token)
@@ -197,6 +217,7 @@ def init_auth_routes(app, db_manager):
             username = request.form['username'].strip()
             password = request.form['password']
             
+            # Admin login via environment variable only
             if username.lower() == 'admin' and Config.ADMIN_PASSWORD and password == Config.ADMIN_PASSWORD:
                 session.clear()
                 user_data = {
@@ -205,8 +226,10 @@ def init_auth_routes(app, db_manager):
                     'is_admin': True
                 }
                 
+                # 管理者の永続セッション作成
                 create_persistent_session(session_manager, 'admin', user_data)
                 
+                # 通常のセッションも設定
                 for key, value in user_data.items():
                     session[key] = value
                 
@@ -219,12 +242,15 @@ def init_auth_routes(app, db_manager):
 
     @app.route('/logout')
     def logout():
+        # 永続セッション削除
         destroy_persistent_session(session_manager)
         flash('ログアウトしました。', 'info')
         return redirect(url_for('login'))
 
+    # 期限切れセッションの定期クリーンアップ
     @app.before_request
     def cleanup_expired_sessions():
+        # 10回に1回程度の頻度でクリーンアップ実行
         import random
         if random.randint(1, 10) == 1:
             session_manager.cleanup_expired_sessions()
