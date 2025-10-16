@@ -1,8 +1,10 @@
 """
 メインルート - ダッシュボードとホームページ
 """
-from flask import Blueprint, render_template, session, redirect, url_for, flash
+from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify
 from auth import login_required
+from datetime import datetime
+import os
 
 main_bp = Blueprint('main', __name__)
 
@@ -68,3 +70,51 @@ def dashboard():
                          correct_count=correct,
                          accuracy=accuracy,
                          genres=genres)
+
+@main_bp.route('/health')
+def health():
+    """
+    ヘルスチェックエンドポイント（JSON形式）
+    ロードバランサーやモニタリングツール用
+    """
+    from flask import current_app
+    
+    try:
+        db_manager = current_app.db_manager
+        # データベース接続チェック
+        db_manager.execute_query('SELECT 1')
+        db_status = 'healthy'
+    except Exception as e:
+        db_status = f'unhealthy: {str(e)}'
+    
+    health_data = {
+        'status': 'ok' if db_status == 'healthy' else 'error',
+        'timestamp': datetime.utcnow().isoformat(),
+        'database': db_status,
+        'version': '1.0.0'
+    }
+    
+    status_code = 200 if health_data['status'] == 'ok' else 503
+    return jsonify(health_data), status_code
+
+@main_bp.route('/deploy-check')
+def deploy_check():
+    """
+    デプロイ確認用ページ（ブラウザ表示用）
+    """
+    from flask import current_app
+    from config import Config
+    
+    try:
+        db_manager = current_app.db_manager
+        db_manager.execute_query('SELECT 1')
+        db_connected = True
+    except:
+        db_connected = False
+    
+    return render_template('health_check.html',
+                         status='正常' if db_connected else 'データベース接続エラー',
+                         environment='開発環境' if Config.DEBUG else '本番環境',
+                         database_type=Config.DATABASE_TYPE.upper(),
+                         version='1.0.0',
+                         timestamp=datetime.now().strftime('%Y年%m月%d日 %H:%M:%S'))
