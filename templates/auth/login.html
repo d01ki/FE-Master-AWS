@@ -1,138 +1,138 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン - 基本情報技術者試験 学習アプリ</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <title>ログイン - FE Master</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .flash {
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .flash.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        .flash.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        .flash.warning {
+            background: #ffe;
+            color: #c93;
+            border: 1px solid #ffc;
         }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <!-- Header -->
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6">
-                    <i class="fas fa-graduation-cap text-2xl text-white"></i>
-                </div>
-                <h2 class="text-3xl font-bold text-white mb-2">ログイン</h2>
-                <p class="text-gray-300">学習を続けるためにログインしてください</p>
+<body>
+    <div class="container">
+        <h1>🎓 FE Master</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">ユーザー名</label>
+                <input type="text" id="username" name="username" required>
             </div>
-
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="p-4 rounded-lg border backdrop-blur-sm
-                            {% if category == 'error' %}bg-red-500/20 border-red-500/30 text-red-300
-                            {% elif category == 'success' %}bg-green-500/20 border-green-500/30 text-green-300
-                            {% elif category == 'info' %}bg-blue-500/20 border-blue-500/30 text-blue-300
-                            {% else %}bg-yellow-500/20 border-yellow-500/30 text-yellow-300{% endif %}">
-                            <div class="flex items-center">
-                                <i class="fas 
-                                    {% if category == 'error' %}fa-exclamation-circle
-                                    {% elif category == 'success' %}fa-check-circle
-                                    {% elif category == 'info' %}fa-info-circle
-                                    {% else %}fa-exclamation-triangle{% endif %} mr-3"></i>
-                                {{ message }}
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <!-- Login Form -->
-            <form class="space-y-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8" method="POST">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-white mb-2">
-                        <i class="fas fa-user mr-2"></i>ユーザー名
-                    </label>
-                    <input id="username" name="username" type="text" required
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                           placeholder="ユーザー名を入力してください">
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-medium text-white mb-2">
-                        <i class="fas fa-lock mr-2"></i>パスワード
-                    </label>
-                    <div class="relative">
-                        <input id="password" name="password" type="password" required
-                               class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                               placeholder="パスワードを入力してください">
-                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-                            <i id="password-icon" class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox" value="1"
-                           class="w-4 h-4 text-blue-600 bg-white/10 border border-white/20 rounded focus:ring-blue-500 focus:ring-2">
-                    <label for="remember" class="ml-2 text-sm text-gray-300">
-                        ログイン状態を保持する
-                    </label>
-                </div>
-
-                <button type="submit"
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-1">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
-                    ログイン
-                </button>
-            </form>
-
-            <!-- Register Link -->
-            <div class="text-center">
-                <p class="text-gray-300">
-                    アカウントをお持ちでない場合は
-                    <a href="{{ url_for('register') }}" class="font-medium text-blue-400 hover:text-blue-300 transition-colors">
-                        新規登録
-                    </a>
-                </p>
+            
+            <div class="form-group">
+                <label for="password">パスワード</label>
+                <input type="password" id="password" name="password" required>
             </div>
+            
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="remember_me" name="remember_me" checked>
+                <label for="remember_me" style="margin-bottom: 0;">ログイン状態を保持する</label>
+            </div>
+            
+            <button type="submit">ログイン</button>
+        </form>
+        
+        <div class="links">
+            <p>アカウントをお持ちでないですか？ <a href="{{ url_for('register') }}">新規登録</a></p>
         </div>
     </div>
-
-    <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const passwordIcon = document.getElementById('password-icon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                passwordIcon.classList.remove('fa-eye');
-                passwordIcon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                passwordIcon.classList.remove('fa-eye-slash');
-                passwordIcon.classList.add('fa-eye');
-            }
-        }
-
-        // Auto-hide flash messages
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('[class*="bg-red-500/20"], [class*="bg-green-500/20"], [class*="bg-blue-500/20"], [class*="bg-yellow-500/20"]');
-            alerts.forEach(function(alert) {
-                alert.style.opacity = '0';
-                alert.style.transform = 'translateY(-20px)';
-                setTimeout(function() {
-                    alert.remove();
-                }, 300);
-            });
-        }, 5000);
-    </script>
 </body>
 </html>
